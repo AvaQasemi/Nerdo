@@ -1,170 +1,187 @@
 <!doctype html>
 <html lang="fa">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>داشبورد | نِردو</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>داشبورد | نِردو</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;900&display=swap" rel="stylesheet">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
-  <div class="container">
+	<div class="container">
 
-    <div class="topbar">
-      <div class="brand">
-        <svg class="logo" viewBox="0 0 120 120" aria-label="لوگوی نردو">
-          <defs>
-            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#FFD29D"/><stop offset="1" stop-color="#FFC1D6"/>
-            </linearGradient>
-            <linearGradient id="g2" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0" stop-color="#42d6c3"/><stop offset="1" stop-color="#6d67ff"/>
-            </linearGradient>
-          </defs>
-          <circle cx="60" cy="62" r="46" fill="url(#g1)"/>
-          <circle cx="38" cy="34" r="14" fill="url(#g1)"/>
-          <circle cx="82" cy="34" r="14" fill="url(#g1)"/>
-          <rect x="25" y="52" width="70" height="30" rx="15" fill="url(#g2)" opacity=".9"/>
-          <rect x="32" y="58" width="26" height="18" rx="9" fill="rgba(255,255,255,.65)"/>
-          <rect x="62" y="58" width="26" height="18" rx="9" fill="rgba(255,255,255,.65)"/>
-        </svg>
+		<div class="topbar">
+			<div class="brand">
+				<svg class="logo" viewBox="0 0 120 120" aria-label="لوگوی نردو">
+					<defs>
+						<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+							<stop offset="0" stop-color="#FFD29D" />
+							<stop offset="1" stop-color="#FFC1D6" />
+						</linearGradient>
+						<linearGradient id="g2" x1="0" y1="1" x2="1" y2="0">
+							<stop offset="0" stop-color="#42d6c3" />
+							<stop offset="1" stop-color="#6d67ff" />
+						</linearGradient>
+					</defs>
+					<circle cx="60" cy="62" r="46" fill="url(#g1)" />
+					<circle cx="38" cy="34" r="14" fill="url(#g1)" />
+					<circle cx="82" cy="34" r="14" fill="url(#g1)" />
+					<rect x="25" y="52" width="70" height="30" rx="15" fill="url(#g2)" opacity=".9" />
+					<rect x="32" y="58" width="26" height="18" rx="9" fill="rgba(255,255,255,.65)" />
+					<rect x="62" y="58" width="26" height="18" rx="9" fill="rgba(255,255,255,.65)" />
+				</svg>
 
-        <div>
-          <h1>نِردو</h1>
-          <div class="sub">Kanban · مدیریت نرم و باحال کارها</div>
-          <div id="me" class="muted"></div>
-        </div>
-      </div>
+				<div>
+					<h1>نِردو</h1>
+					<div class="sub">Kanban · مدیریت نرم و باحال کارها</div>
+					<div id="me" class="muted"></div>
+				</div>
+			</div>
 
-      <div class="topbar-actions">
-        <button id="themeBtn" class="ghost">🌙 / ☀️</button>
-        <span id="roleTag" class="tag">کاربر</span>
-        <a class="tag" href="/about.html">درباره‌ما</a>
-        <button id="logoutBtn" class="danger">خروج</button>
-      </div>
-    </div>
+			<div class="topbar-actions">
+				<button id="themeBtn" class="ghost">🌙 / ☀️</button>
+				<span id="roleTag" class="tag">کاربر</span>
+				<a class="tag" href="/about.html">درباره‌ما</a>
+				<button id="logoutBtn" class="danger">خروج</button>
+			</div>
+		</div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>ساخت پروژه جدید</h2>
-        <p class="muted">اول پروژه بساز، بعد داخلش تسک اضافه کن.</p>
-        <div class="hr"></div>
+		<div class="grid">
+			<div class="card">
+				<h2>ساخت پروژه جدید</h2>
+				<p class="muted">اول پروژه بساز، بعد داخلش تسک اضافه کن.</p>
+				<div class="hr"></div>
 
-        <form id="projectForm">
-          <label class="lbl">عنوان پروژه</label>
-          <input name="title" placeholder="مثلاً پروژه وب‌سایت مدرسه" required>
+				<form id="projectForm">
+					<label class="lbl">عنوان پروژه</label>
+					<input name="title" placeholder="مثلاً پروژه وب‌سایت مدرسه" required>
 
-          <label class="lbl">توضیح کوتاه</label>
-          <textarea name="description" rows="2" placeholder="هدف پروژه، اعضا، ..."></textarea>
+					<label class="lbl">توضیح کوتاه</label>
+					<textarea name="description" rows="2" placeholder="هدف پروژه، اعضا، ..."></textarea>
 
-          <button class="primary" type="submit" style="margin-top:10px">ایجاد پروژه</button>
-        </form>
-      </div>
+					<button class="primary" type="submit" style="margin-top:10px">ایجاد پروژه</button>
+				</form>
+			</div>
 
-      <div class="card">
-        <h2>پروژه‌های من</h2>
-        <p class="muted">روی یک پروژه کلیک کن تا کانبانش باز شود.</p>
-        <div class="hr"></div>
-        <div id="projectList"></div>
-      </div>
-    </div>
+			<div class="card">
+				<h2>پروژه‌های من</h2>
+				<p class="muted">روی یک پروژه کلیک کن تا کانبانش باز شود.</p>
+				<div class="hr"></div>
+				<div id="projectList"></div>
+			</div>
+		</div>
 
-    <div class="card panel">
-      <div class="board-head">
-        <div>
-          <h2 id="activeProjectTitle">کانبان</h2>
-          <p id="activeProjectDesc" class="muted">ابتدا یک پروژه انتخاب کن.</p>
-        </div>
-        <div class="badge">Drag & Drop فعال است ✅</div>
-      </div>
+		<div class="card panel">
+			<div class="board-head">
+				<div>
+					<h2 id="activeProjectTitle">کانبان</h2>
+					<p id="activeProjectDesc" class="muted">ابتدا یک پروژه انتخاب کن.</p>
+				</div>
+				<div class="badge">Drag & Drop فعال است ✅</div>
+			</div>
 
-      <div class="kpi-grid">
-        <div class="kpi"><div id="kpiTotal" class="n">0</div><div class="t">کل تسک‌ها</div></div>
-        <div class="kpi"><div id="kpiDone" class="n">0</div><div class="t">انجام شده</div></div>
-        <div class="kpi"><div id="kpiDoing" class="n">0</div><div class="t">در حال انجام</div></div>
-        <div class="kpi"><div id="kpiRate" class="n">0%</div><div class="t">نرخ تکمیل</div></div>
-      </div>
+			<div class="kpi-grid">
+				<div class="kpi">
+					<div id="kpiTotal" class="n">0</div>
+					<div class="t">کل تسک‌ها</div>
+				</div>
+				<div class="kpi">
+					<div id="kpiDone" class="n">0</div>
+					<div class="t">انجام شده</div>
+				</div>
+				<div class="kpi">
+					<div id="kpiDoing" class="n">0</div>
+					<div class="t">در حال انجام</div>
+				</div>
+				<div class="kpi">
+					<div id="kpiRate" class="n">0%</div>
+					<div class="t">نرخ تکمیل</div>
+				</div>
+			</div>
 
-      <div class="hr"></div>
+			<div class="hr"></div>
 
-      <div class="grid board-grid">
-        <div class="card" style="background:var(--card2);box-shadow:none">
-          <h3>افزودن تسک</h3>
-          <form id="taskForm">
-            <label class="lbl">عنوان تسک</label>
-            <input name="title" placeholder="مثلاً طراحی صفحه ورود" required>
+			<div class="grid board-grid">
+				<div class="card" style="background:var(--card2);box-shadow:none">
+					<h3>افزودن تسک</h3>
+					<form id="taskForm">
+						<label class="lbl">عنوان تسک</label>
+						<input name="title" placeholder="مثلاً طراحی صفحه ورود" required>
 
-            <label class="lbl">توضیح</label>
-            <textarea name="description" rows="2" placeholder="جزئیات کار..."></textarea>
+						<label class="lbl">توضیح</label>
+						<textarea name="description" rows="2" placeholder="جزئیات کار..."></textarea>
 
-            <label class="lbl">اولویت</label>
-            <select name="priority">
-              <option value="1">بالا</option>
-              <option value="2" selected>متوسط</option>
-              <option value="3">پایین</option>
-            </select>
+						<label class="lbl">اولویت</label>
+						<select name="priority">
+							<option value="1">بالا</option>
+							<option value="2" selected>متوسط</option>
+							<option value="3">پایین</option>
+						</select>
 
-            <button class="primary" type="submit" style="margin-top:10px;width:100%">ثبت تسک</button>
-          </form>
+						<button class="primary" type="submit" style="margin-top:10px;width:100%">ثبت تسک</button>
+					</form>
 
-          <div class="hr"></div>
+					<div class="hr"></div>
 
-          <h3>نظرسنجی و بازخورد ⭐</h3>
-          <p class="muted">امتیاز بده و پیام کوتاه بنویس.</p>
-          <div class="stars">
-            <div class="star on" data-v="1">★</div>
-            <div class="star on" data-v="2">★</div>
-            <div class="star on" data-v="3">★</div>
-            <div class="star on" data-v="4">★</div>
-            <div class="star on" data-v="5">★</div>
-            <span class="tag">امتیاز: <b id="starsValue">5</b></span>
-          </div>
-          <form id="feedbackForm">
-            <label class="lbl">پیام</label>
-            <textarea name="message" rows="3" placeholder="نظر/پیشنهاد/مشکل..." required></textarea>
-            <button class="ghost" type="submit" style="margin-top:10px;width:100%">ارسال بازخورد</button>
-          </form>
-        </div>
+					<h3>نظرسنجی و بازخورد ⭐</h3>
+					<p class="muted">امتیاز بده و پیام کوتاه بنویس.</p>
+					<div class="stars">
+						<div class="star on" data-v="1">★</div>
+						<div class="star on" data-v="2">★</div>
+						<div class="star on" data-v="3">★</div>
+						<div class="star on" data-v="4">★</div>
+						<div class="star on" data-v="5">★</div>
+						<span class="tag">امتیاز: <b id="starsValue">5</b></span>
+					</div>
+					<form id="feedbackForm">
+						<label class="lbl">پیام</label>
+						<textarea name="message" rows="3" placeholder="نظر/پیشنهاد/مشکل..." required></textarea>
+						<button class="ghost" type="submit" style="margin-top:10px;width:100%">ارسال بازخورد</button>
+					</form>
+				</div>
 
-        <div class="kanban">
-          <div class="column">
-            <div class="col-head">
-              <h3>در انتظار</h3>
-              <span id="countTodo" class="pill">0</span>
-            </div>
-            <div id="colTodo" class="dropzone" data-status="todo"></div>
-          </div>
+				<div class="kanban">
+					<div class="column">
+						<div class="col-head">
+							<h3>در انتظار</h3>
+							<span id="countTodo" class="pill">0</span>
+						</div>
+						<div id="colTodo" class="dropzone" data-status="todo"></div>
+					</div>
 
-          <div class="column">
-            <div class="col-head">
-              <h3>در حال انجام</h3>
-              <span id="countDoing" class="pill">0</span>
-            </div>
-            <div id="colDoing" class="dropzone" data-status="doing"></div>
-          </div>
+					<div class="column">
+						<div class="col-head">
+							<h3>در حال انجام</h3>
+							<span id="countDoing" class="pill">0</span>
+						</div>
+						<div id="colDoing" class="dropzone" data-status="doing"></div>
+					</div>
 
-          <div class="column">
-            <div class="col-head">
-              <h3>انجام شده</h3>
-              <span id="countDone" class="pill">0</span>
-            </div>
-            <div id="colDone" class="dropzone" data-status="done"></div>
-          </div>
-        </div>
-      </div>
+					<div class="column">
+						<div class="col-head">
+							<h3>انجام شده</h3>
+							<span id="countDone" class="pill">0</span>
+						</div>
+						<div id="colDone" class="dropzone" data-status="done"></div>
+					</div>
+				</div>
+			</div>
 
-      <div class="muted" style="margin-top:10px;">
-        راهنما: کارت‌ها را بکش و داخل ستون دیگر رها کن تا وضعیتشان عوض شود.
-      </div>
-    </div>
+			<div class="muted" style="margin-top:10px;">
+				راهنما: کارت‌ها را بکش و داخل ستون دیگر رها کن تا وضعیتشان عوض شود.
+			</div>
+		</div>
 
-  </div>
+	</div>
 
-  <div id="toast" class="toast"></div>
-  <script src="/js/app.js"></script>
+	<div id="toast" class="toast"></div>
+	<script src="/js/app.js"></script>
 </body>
+
 </html>
