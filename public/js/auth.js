@@ -78,3 +78,4 @@ document.addEventListener("DOMContentLoaded", () => {
 	initLogin();
 	initRegister();
 });
+git check
