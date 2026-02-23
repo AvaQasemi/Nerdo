@@ -616,6 +616,7 @@ app.get("/api/admin/feedback", authRequired, (req, res) => {
   res.json({ ok: true, feedback: rows });
 });
 
+<<<<<<< HEAD
 // ========= شروع سرور =========
 
 bootDatabase().then(() => {
@@ -625,3 +626,10 @@ bootDatabase().then(() => {
 }).catch((e) => {
   console.log("❌ Failed to boot DB:", e?.message || e);
 });
+=======
+// ---------- Start ----------
+app.listen(PORT, () => {
+	console.log(`✅ Nerdo running on http://localhost:${PORT}`);
+});
+git check
+>>>>>>> 06efbdd7f4ab2d36d7917271203f242a7d2fdfd0

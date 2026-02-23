@@ -380,6 +380,7 @@ textarea{ resize:vertical; }
   cursor:pointer;
   user-select:none;
 }
+<<<<<<< HEAD
 
 .star.on{
   background:rgba(255,210,128,.50);
@@ -561,3 +562,8 @@ h2{
   background-clip: text;
   color: transparent;
 }
+=======
+:root.dark .star{background:rgba(255,255,255,.06)}
+.star.on{background:rgba(255,210,128,.45);border-color:rgba(255,210,128,.8)}
+git check
+>>>>>>> 06efbdd7f4ab2d36d7917271203f242a7d2fdfd0

@@ -167,6 +167,7 @@ function updateKPIsAndProgress(){
   $("emptyTasks").style.display = showEmpty ? "block" : "none";
 }
 
+<<<<<<< HEAD
 /* =========================
    ساخت کارت تسک
    ========================= */
@@ -405,3 +406,7 @@ main().catch(() => {
   clearAuth();
   location.href = "/login.html";
 });
+=======
+document.addEventListener("DOMContentLoaded", init);
+git check
+>>>>>>> 06efbdd7f4ab2d36d7917271203f242a7d2fdfd0

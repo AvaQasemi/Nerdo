@@ -78,6 +78,7 @@ function showMsg(el, text, ok=true){
  * خودش فرم‌ها را پیدا می‌کند و هندل می‌کند.
  */
 document.addEventListener("DOMContentLoaded", () => {
+<<<<<<< HEAD
   const loginForm = document.getElementById("loginForm");
   const registerForm = document.getElementById("registerForm");
   const msg = document.getElementById("msg");
@@ -132,3 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+=======
+	initLogin();
+	initRegister();
+});
+git check
+>>>>>>> 06efbdd7f4ab2d36d7917271203f242a7d2fdfd0
