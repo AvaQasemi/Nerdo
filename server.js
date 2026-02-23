@@ -1,260 +1,627 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+// server.js
+// ✅ بک‌اند Nerdo (کانبان فارسی) با دیتابیس SQLite واقعی (ولی بدون نصب ابزارهای سیستمی)
+// ✅ با sql.js (WASM) کار می‌کنیم تا روی ویندوز/نود جدید، خطای node-gyp نگیری
+// ✅ داده‌ها داخل فایل nerdo.db ذخیره میشن (کنار server.js)
 
-const app = express();
-const PORT = 3000;
+import express from "express";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import crypto from "crypto";
+import initSqlJs from "sql.js";
 
-const DATA_PATH = path.join(__dirname, "data.json");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ========= تنظیمات =========
+const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
 
+// فایل دیتابیس (SQLite)
+const DB_FILE = path.join(__dirname, "nerdo.db");
+
+// اگر قبلاً JSON داشتی، برای مهاجرت خودکار
+const LEGACY_JSON = path.join(__dirname, "data.json");
+
+// ========= ابزارهای کمکی =========
+
+// ✅ ساخت هش امن برای رمز
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  // از scrypt (امن و داخلی نود) استفاده می‌کنیم
+  const hashed = crypto.scryptSync(password, salt, 32).toString("hex");
+  return { salt, hashed };
+}
+
+// ✅ چک کردن رمز
+function verifyPassword(password, salt, hashed) {
+  const test = crypto.scryptSync(password, salt, 32).toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(test, "hex"), Buffer.from(hashed, "hex"));
+}
+
+// ✅ تولید توکن سشن
+function makeToken() {
+  return crypto.randomBytes(24).toString("hex");
+}
+
+// ✅ خواندن Bearer Token
+function getToken(req) {
+  const h = req.headers.authorization || "";
+  if (h.startsWith("Bearer ")) return h.slice(7).trim();
+  // بعضی فرانت‌ها x-token می‌فرستن
+  if (req.headers["x-token"]) return String(req.headers["x-token"]);
+  return "";
+}
+
+// ✅ ساخت تاریخ ISO
+function nowISO() {
+  return new Date().toISOString();
+}
+
+// ========= بوت SQLite (sql.js) =========
+
+let SQL;         // ماژول sql.js
+let db;          // دیتابیس
+let saveTimer;   // تایمر ذخیره‌سازی
+
+async function bootDatabase() {
+  SQL = await initSqlJs({
+    // مسیر فایل wasm
+    locateFile: (file) => path.join(__dirname, "node_modules", "sql.js", "dist", file),
+  });
+
+  if (fs.existsSync(DB_FILE)) {
+    // ✅ اگر دیتابیس هست، می‌خونیم
+    const filebuffer = fs.readFileSync(DB_FILE);
+    db = new SQL.Database(filebuffer);
+  } else {
+    // ✅ اگر نیست، می‌سازیم
+    db = new SQL.Database();
+  }
+
+  // ✅ ساخت جدول‌ها اگر نبودن
+  db.run(`
+    PRAGMA journal_mode = WAL;
+
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      salt TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'todo',     -- todo | doing | done
+      priority INTEGER NOT NULL DEFAULT 2,     -- 1 بالا | 2 متوسط | 3 پایین
+      deadline TEXT DEFAULT NULL,              -- ISO date (اختیاری)
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      stars INTEGER NOT NULL DEFAULT 5,
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+
+  // ✅ ادمین پیش‌فرض (اختیاری) - اگر خواستی بعداً حذفش کن
+  ensureAdmin();
+
+  // ✅ اگر data.json قدیمی داری، یک بار مهاجرت کن
+  migrateFromJsonIfNeeded();
+
+  // ✅ ذخیره خودکار روی دیسک (هر بار تغییر، 500ms بعد)
+  scheduleSave();
+}
+
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      const data = db.export();
+      fs.writeFileSync(DB_FILE, Buffer.from(data));
+      // console.log("✅ DB saved");
+    } catch (e) {
+      console.log("❌ DB save error:", e?.message || e);
+    }
+  }, 500);
+}
+
+// ✅ هر جایی که db.run یا تغییر داده داریم، بعدش scheduleSave() صدا می‌زنیم
+
+function ensureAdmin() {
+  const username = "admin@nerdo.local";
+  const name = "ادمین";
+  const row = getOne(`SELECT id FROM users WHERE username = ?`, [username]);
+  if (!row) {
+    const pass = "admin1234"; // فقط برای تست (برای ارائه بد نیست)
+    const { salt, hashed } = hashPassword(pass);
+    run(
+      `INSERT INTO users (username, name, salt, password_hash, role, created_at)
+       VALUES (?, ?, ?, ?, 'admin', ?)`,
+      [username, name, salt, hashed, nowISO()]
+    );
+    scheduleSave();
+    console.log("✅ Admin created:", username, "pass:", pass);
+  }
+}
+
+function migrateFromJsonIfNeeded() {
+  // ✅ اگر دیتابیس تازه ساخته شده و data.json وجود دارد، مهاجرت کن
+  if (!fs.existsSync(LEGACY_JSON)) return;
+
+  // اگر قبلاً مهاجرت انجام شده باشد، دوباره انجام نمی‌دهیم
+  const hasAnyUser = getOne(`SELECT id FROM users LIMIT 1`, []);
+  const hasAnyProject = getOne(`SELECT id FROM projects LIMIT 1`, []);
+  const hasAnyTask = getOne(`SELECT id FROM tasks LIMIT 1`, []);
+  if (hasAnyUser || hasAnyProject || hasAnyTask) return;
+
+  try {
+    const raw = fs.readFileSync(LEGACY_JSON, "utf-8").trim();
+    if (!raw) return;
+    const j = JSON.parse(raw);
+
+    // ساختارهای مختلف رو هندل می‌کنیم (چون معلوم نیست json دقیقاً چطور بوده)
+    const users = Array.isArray(j.users) ? j.users : [];
+    const projects = Array.isArray(j.projects) ? j.projects : [];
+    const tasks = Array.isArray(j.tasks) ? j.tasks : [];
+
+    const userIdMap = new Map();
+    const projectIdMap = new Map();
+
+    for (const u of users) {
+      const username = String(u.username || u.email || "").trim();
+      if (!username) continue;
+      const name = String(u.name || u.fullname || "کاربر");
+      const role = u.role === "admin" ? "admin" : "user";
+      const pass = String(u.password || "123456"); // اگر قبلاً پسورد واضح ذخیره می‌شد
+      const { salt, hashed } = hashPassword(pass);
+
+      run(
+        `INSERT INTO users (username, name, salt, password_hash, role, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [username, name, salt, hashed, role, nowISO()]
+      );
+      const newId = getOne(`SELECT id FROM users WHERE username = ?`, [username]).id;
+      userIdMap.set(u.id ?? username, newId);
+    }
+
+    for (const p of projects) {
+      const owner = userIdMap.get(p.userId ?? p.user_id ?? p.ownerId ?? p.owner) || null;
+      if (!owner) continue;
+
+      run(
+        `INSERT INTO projects (user_id, title, description, created_at)
+         VALUES (?, ?, ?, ?)`,
+        [owner, String(p.title || "پروژه"), String(p.description || ""), nowISO()]
+      );
+      const newPid = getOne(
+        `SELECT id FROM projects WHERE user_id = ? AND title = ? ORDER BY id DESC LIMIT 1`,
+        [owner, String(p.title || "پروژه")]
+      ).id;
+
+      projectIdMap.set(p.id ?? `${owner}:${p.title}`, newPid);
+    }
+
+    for (const t of tasks) {
+      const pid = projectIdMap.get(t.projectId ?? t.project_id) || null;
+      if (!pid) continue;
+
+      const status = ["todo", "doing", "done"].includes(t.status) ? t.status : "todo";
+      const pr = Number(t.priority || 2);
+      const deadline = t.deadline ? String(t.deadline) : null;
+
+      run(
+        `INSERT INTO tasks (project_id, title, description, status, priority, deadline, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          pid,
+          String(t.title || "تسک"),
+          String(t.description || ""),
+          status,
+          [1, 2, 3].includes(pr) ? pr : 2,
+          deadline,
+          nowISO(),
+          nowISO(),
+        ]
+      );
+    }
+
+    scheduleSave();
+    console.log("✅ Migrated legacy data.json -> SQLite (nerdo.db)");
+  } catch (e) {
+    console.log("❌ Migration failed:", e?.message || e);
+  }
+}
+
+// ========= Wrapper های SQL =========
+
+// ✅ اجرای INSERT/UPDATE/DELETE
+function run(sql, params = []) {
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  stmt.step();
+  stmt.free();
+  scheduleSave();
+}
+
+// ✅ گرفتن یک ردیف
+function getOne(sql, params = []) {
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const has = stmt.step();
+  if (!has) {
+    stmt.free();
+    return null;
+  }
+  const row = stmt.getAsObject();
+  stmt.free();
+  return row;
+}
+
+// ✅ گرفتن چند ردیف
+function getAll(sql, params = []) {
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const rows = [];
+  while (stmt.step()) {
+    rows.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return rows;
+}
+
+// ========= Auth Middleware =========
+function authRequired(req, res, next) {
+  const token = getToken(req);
+  if (!token) return res.status(401).json({ ok: false, message: "Unauthorized" });
+
+  const sess = getOne(
+    `SELECT s.token, u.id as userId, u.username, u.name, u.role
+     FROM sessions s JOIN users u ON u.id = s.user_id
+     WHERE s.token = ?`,
+    [token]
+  );
+  if (!sess) return res.status(401).json({ ok: false, message: "Session invalid" });
+
+  req.user = {
+    id: sess.userId,
+    username: sess.username,
+    name: sess.name,
+    role: sess.role,
+    token: sess.token,
+  };
+  next();
+}
+
+// ========= App =========
+const app = express();
 app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+// ✅ سرو فایل‌های static (HTML/CSS/JS)
 app.use(express.static(PUBLIC_DIR));
 
-function readDB() {
-	try {
-		if (!fs.existsSync(DATA_PATH)) {
-			fs.writeFileSync(
-				DATA_PATH,
-				JSON.stringify({ users: [], sessions: [], projects: [], tasks: [], feedback: [] }, null, 2),
-				"utf-8"
-			);
-		}
-		const raw = fs.readFileSync(DATA_PATH, "utf-8");
-		return JSON.parse(raw || "{}");
-	} catch (e) {
-		return { users: [], sessions: [], projects: [], tasks: [], feedback: [] };
-	}
-}
+// ✅ صفحه اصلی اگر خواستی
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, db: "sqlite(sql.js)", time: nowISO() });
+});
 
-function writeDB(db) {
-	fs.writeFileSync(DATA_PATH, JSON.stringify(db, null, 2), "utf-8");
-}
+// ========= Auth Routes =========
 
-function hashPassword(pw) {
-	// ساده ولی کافی برای پروژه دانش‌آموزی
-	return crypto.createHash("sha256").update(String(pw)).digest("hex");
-}
-
-function makeToken() {
-	return crypto.randomBytes(24).toString("hex");
-}
-
-function auth(req, res, next) {
-	const token = req.headers.authorization?.replace("Bearer ", "") || "";
-	const db = readDB();
-	const sess = db.sessions.find((s) => s.token === token);
-	if (!sess) return res.status(401).json({ ok: false, error: "وارد نشده‌ای." });
-
-	const user = db.users.find((u) => u.id === sess.userId);
-	if (!user) return res.status(401).json({ ok: false, error: "حساب کاربری پیدا نشد." });
-
-	req.user = user;
-	req.token = token;
-	req.db = db;
-	next();
-}
-
-// ---------- Pages ----------
-app.get("/", (req, res) => res.sendFile(path.join(PUBLIC_DIR, "index.html")));
-
-// ---------- Auth APIs ----------
+// ✅ ثبت‌نام
 app.post("/api/register", (req, res) => {
-	const { username, password, name } = req.body || {};
-	if (!username || !password) return res.status(400).json({ ok: false, error: "نام کاربری و رمز لازم است." });
-	if (String(password).length < 4) return res.status(400).json({ ok: false, error: "رمز حداقل ۴ کاراکتر." });
+  try {
+    const username = String(req.body.username || "").trim().toLowerCase();
+    const password = String(req.body.password || "").trim();
+    const name = String(req.body.name || req.body.fullname || "کاربر").trim();
 
-	const db = readDB();
-	const uname = String(username).trim().toLowerCase();
-	if (db.users.some((u) => u.username === uname)) return res.status(409).json({ ok: false, error: "این نام کاربری قبلاً ثبت شده." });
+    if (!username || !password) {
+      return res.status(400).json({ ok: false, message: "نام کاربری و رمز لازم است" });
+    }
+    if (password.length < 4) {
+      return res.status(400).json({ ok: false, message: "رمز خیلی کوتاه است" });
+    }
 
-	const user = {
-		id: crypto.randomUUID(),
-		username: uname,
-		name: String(name || "کاربر").trim() || "کاربر",
-		passHash: hashPassword(password),
-		createdAt: Date.now()
-	};
+    const exists = getOne(`SELECT id FROM users WHERE username = ?`, [username]);
+    if (exists) {
+      return res.status(409).json({ ok: false, message: "این نام کاربری قبلاً ثبت شده" });
+    }
 
-	db.users.push(user);
+    const { salt, hashed } = hashPassword(password);
 
-	// اولین کاربر = ادمین (برای ارائه خوبه)
-	// می‌تونی تغییر بدی ولی همین جذابه
-	if (db.users.length === 1) user.role = "admin";
-	else user.role = "user";
+    run(
+      `INSERT INTO users (username, name, salt, password_hash, role, created_at)
+       VALUES (?, ?, ?, ?, 'user', ?)`,
+      [username, name, salt, hashed, nowISO()]
+    );
 
-	const token = makeToken();
-	db.sessions.push({ token, userId: user.id, createdAt: Date.now() });
-	writeDB(db);
+    // ✅ بعد از ثبت‌نام، اتومات لاگین هم می‌کنیم
+    const u = getOne(`SELECT id, username, name, role FROM users WHERE username = ?`, [username]);
+    const token = makeToken();
+    run(`INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)`, [token, u.id, nowISO()]);
 
-	res.json({ ok: true, token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
+    res.json({ ok: true, token, user: { id: u.id, username: u.username, name: u.name, role: u.role } });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: "ثبت‌نام ناموفق" });
+  }
 });
 
+// ✅ ورود
 app.post("/api/login", (req, res) => {
-	const { username, password } = req.body || {};
-	if (!username || !password) return res.status(400).json({ ok: false, error: "نام کاربری و رمز لازم است." });
+  try {
+    const username = String(req.body.username || "").trim().toLowerCase();
+    const password = String(req.body.password || "").trim();
 
-	const db = readDB();
-	const uname = String(username).trim().toLowerCase();
-	const user = db.users.find((u) => u.username === uname);
-	if (!user) return res.status(401).json({ ok: false, error: "نام کاربری یا رمز اشتباه است." });
+    if (!username || !password) {
+      return res.status(400).json({ ok: false, message: "اطلاعات ناقص است" });
+    }
 
-	if (user.passHash !== hashPassword(password)) return res.status(401).json({ ok: false, error: "نام کاربری یا رمز اشتباه است." });
+    const u = getOne(
+      `SELECT id, username, name, role, salt, password_hash FROM users WHERE username = ?`,
+      [username]
+    );
+    if (!u) return res.status(401).json({ ok: false, message: "نام کاربری یا رمز اشتباه است" });
 
-	const token = makeToken();
-	db.sessions.push({ token, userId: user.id, createdAt: Date.now() });
-	writeDB(db);
+    const ok = verifyPassword(password, u.salt, u.password_hash);
+    if (!ok) return res.status(401).json({ ok: false, message: "نام کاربری یا رمز اشتباه است" });
 
-	res.json({ ok: true, token, user: { id: user.id, username: user.username, name: user.name, role: user.role } });
+    const token = makeToken();
+    run(`INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)`, [token, u.id, nowISO()]);
+
+    res.json({ ok: true, token, user: { id: u.id, username: u.username, name: u.name, role: u.role } });
+  } catch (e) {
+    res.status(500).json({ ok: false, message: "ورود ناموفق" });
+  }
 });
 
-app.get("/api/me", auth, (req, res) => {
-	res.json({ ok: true, user: { id: req.user.id, username: req.user.username, name: req.user.name, role: req.user.role } });
+// ✅ خروج
+app.post("/api/logout", authRequired, (req, res) => {
+  const token = req.user.token;
+  run(`DELETE FROM sessions WHERE token = ?`, [token]);
+  res.json({ ok: true });
 });
 
-app.post("/api/logout", auth, (req, res) => {
-	const db = readDB();
-	db.sessions = db.sessions.filter((s) => s.token !== req.token);
-	writeDB(db);
-	res.json({ ok: true });
+// ✅ کاربر فعلی
+app.get("/api/me", authRequired, (req, res) => {
+  res.json({ ok: true, user: req.user });
 });
 
-// ---------- Projects ----------
-app.get("/api/projects", auth, (req, res) => {
-	const db = readDB();
-	const projects = db.projects.filter((p) => p.ownerId === req.user.id).sort((a, b) => b.createdAt - a.createdAt);
-	res.json({ ok: true, projects });
+// ========= Projects =========
+
+// ✅ لیست پروژه‌های من
+app.get("/api/projects", authRequired, (req, res) => {
+  const rows = getAll(
+    `SELECT id, title, description, created_at
+     FROM projects
+     WHERE user_id = ?
+     ORDER BY id DESC`,
+    [req.user.id]
+  );
+  res.json({ ok: true, projects: rows });
 });
 
-app.post("/api/projects", auth, (req, res) => {
-	const { title, description } = req.body || {};
-	if (!title) return res.status(400).json({ ok: false, error: "عنوان پروژه لازم است." });
+// ✅ ساخت پروژه
+app.post("/api/projects", authRequired, (req, res) => {
+  const title = String(req.body.title || "").trim();
+  const description = String(req.body.description || "").trim();
 
-	const db = readDB();
-	const project = {
-		id: crypto.randomUUID(),
-		ownerId: req.user.id,
-		title: String(title).trim(),
-		description: String(description || "").trim(),
-		createdAt: Date.now()
-	};
-	db.projects.push(project);
-	writeDB(db);
-	res.json({ ok: true, project });
+  if (!title) return res.status(400).json({ ok: false, message: "عنوان پروژه لازم است" });
+
+  run(
+    `INSERT INTO projects (user_id, title, description, created_at)
+     VALUES (?, ?, ?, ?)`,
+    [req.user.id, title, description, nowISO()]
+  );
+
+  const p = getOne(
+    `SELECT id, title, description, created_at
+     FROM projects
+     WHERE user_id = ? AND title = ?
+     ORDER BY id DESC LIMIT 1`,
+    [req.user.id, title]
+  );
+
+  res.json({ ok: true, project: p });
 });
 
-app.delete("/api/projects/:id", auth, (req, res) => {
-	const projectId = req.params.id;
-	const db = readDB();
+// ✅ حذف پروژه (همه تسک‌ها هم با ON DELETE CASCADE حذف میشن)
+app.delete("/api/projects/:id", authRequired, (req, res) => {
+  const pid = Number(req.params.id);
+  const own = getOne(`SELECT id FROM projects WHERE id = ? AND user_id = ?`, [pid, req.user.id]);
+  if (!own) return res.status(404).json({ ok: false, message: "پروژه پیدا نشد" });
 
-	const p = db.projects.find((x) => x.id === projectId && x.ownerId === req.user.id);
-	if (!p) return res.status(404).json({ ok: false, error: "پروژه پیدا نشد." });
-
-	db.projects = db.projects.filter((x) => x.id !== projectId);
-	db.tasks = db.tasks.filter((t) => t.projectId !== projectId); // حذف تسک‌ها همزمان
-	writeDB(db);
-
-	res.json({ ok: true });
+  run(`DELETE FROM projects WHERE id = ?`, [pid]);
+  res.json({ ok: true });
 });
 
-// ---------- Tasks ----------
-app.get("/api/projects/:id/tasks", auth, (req, res) => {
-	const projectId = req.params.id;
-	const db = readDB();
+// ========= Tasks =========
 
-	const p = db.projects.find((x) => x.id === projectId && x.ownerId === req.user.id);
-	if (!p) return res.status(404).json({ ok: false, error: "پروژه پیدا نشد." });
+// ✅ گرفتن تسک‌های یک پروژه
+app.get("/api/projects/:id/tasks", authRequired, (req, res) => {
+  const pid = Number(req.params.id);
 
-	const tasks = db.tasks
-		.filter((t) => t.projectId === projectId && t.ownerId === req.user.id)
-		.sort((a, b) => b.createdAt - a.createdAt);
+  const own = getOne(`SELECT id FROM projects WHERE id = ? AND user_id = ?`, [pid, req.user.id]);
+  if (!own) return res.status(404).json({ ok: false, message: "پروژه پیدا نشد" });
 
-	res.json({ ok: true, tasks });
+  const tasks = getAll(
+    `SELECT id, project_id, title, description, status, priority, deadline, created_at, updated_at
+     FROM tasks
+     WHERE project_id = ?
+     ORDER BY id DESC`,
+    [pid]
+  );
+
+  res.json({ ok: true, tasks });
 });
 
-app.post("/api/projects/:id/tasks", auth, (req, res) => {
-	const projectId = req.params.id;
-	const { title, description, priority } = req.body || {};
-	if (!title) return res.status(400).json({ ok: false, error: "عنوان تسک لازم است." });
+// ✅ ساخت تسک در پروژه
+app.post("/api/projects/:id/tasks", authRequired, (req, res) => {
+  const pid = Number(req.params.id);
 
-	const db = readDB();
-	const p = db.projects.find((x) => x.id === projectId && x.ownerId === req.user.id);
-	if (!p) return res.status(404).json({ ok: false, error: "پروژه پیدا نشد." });
+  const own = getOne(`SELECT id FROM projects WHERE id = ? AND user_id = ?`, [pid, req.user.id]);
+  if (!own) return res.status(404).json({ ok: false, message: "پروژه پیدا نشد" });
 
-	const task = {
-		id: crypto.randomUUID(),
-		ownerId: req.user.id,
-		projectId,
-		title: String(title).trim(),
-		description: String(description || "").trim(),
-		priority: Number(priority || 2),
-		status: "todo",
-		createdAt: Date.now()
-	};
+  const title = String(req.body.title || "").trim();
+  const description = String(req.body.description || "").trim();
+  const priority = Number(req.body.priority || 2);
+  const deadline = req.body.deadline ? String(req.body.deadline) : null;
 
-	db.tasks.push(task);
-	writeDB(db);
-	res.json({ ok: true, task });
+  if (!title) return res.status(400).json({ ok: false, message: "عنوان تسک لازم است" });
+
+  run(
+    `INSERT INTO tasks (project_id, title, description, status, priority, deadline, created_at, updated_at)
+     VALUES (?, ?, ?, 'todo', ?, ?, ?, ?)`,
+    [pid, title, description, [1, 2, 3].includes(priority) ? priority : 2, deadline, nowISO(), nowISO()]
+  );
+
+  const t = getOne(
+    `SELECT id, project_id, title, description, status, priority, deadline, created_at, updated_at
+     FROM tasks WHERE project_id = ? ORDER BY id DESC LIMIT 1`,
+    [pid]
+  );
+
+  res.json({ ok: true, task: t });
 });
 
-app.patch("/api/tasks/:id", auth, (req, res) => {
-	const taskId = req.params.id;
-	const { status, title, description, priority } = req.body || {};
-	const db = readDB();
+// ✅ آپدیت تسک (برای Drag&Drop: تغییر status) + ویرایش
+app.patch("/api/tasks/:id", authRequired, (req, res) => {
+  const tid = Number(req.params.id);
 
-	const task = db.tasks.find((t) => t.id === taskId && t.ownerId === req.user.id);
-	if (!task) return res.status(404).json({ ok: false, error: "تسک پیدا نشد." });
+  // مالکیت: تسک باید مربوط به پروژه‌های همین کاربر باشد
+  const own = getOne(
+    `SELECT t.id, t.project_id
+     FROM tasks t
+     JOIN projects p ON p.id = t.project_id
+     WHERE t.id = ? AND p.user_id = ?`,
+    [tid, req.user.id]
+  );
+  if (!own) return res.status(404).json({ ok: false, message: "تسک پیدا نشد" });
 
-	if (status) task.status = status;
-	if (typeof title === "string") task.title = title.trim();
-	if (typeof description === "string") task.description = description.trim();
-	if (priority != null) task.priority = Number(priority);
+  // فیلدهای مجاز
+  const title = req.body.title !== undefined ? String(req.body.title).trim() : null;
+  const description = req.body.description !== undefined ? String(req.body.description).trim() : null;
+  const status = req.body.status !== undefined ? String(req.body.status).trim() : null;
+  const priority = req.body.priority !== undefined ? Number(req.body.priority) : null;
+  const deadline = req.body.deadline !== undefined ? (req.body.deadline ? String(req.body.deadline) : null) : undefined;
 
-	writeDB(db);
-	res.json({ ok: true, task });
+  // آپدیت پویا (هرچی فرستادی همون تغییر می‌کنه)
+  const sets = [];
+  const params = [];
+
+  if (title !== null) { sets.push("title = ?"); params.push(title); }
+  if (description !== null) { sets.push("description = ?"); params.push(description); }
+  if (status !== null) {
+    const s = ["todo", "doing", "done"].includes(status) ? status : "todo";
+    sets.push("status = ?"); params.push(s);
+  }
+  if (priority !== null) {
+    sets.push("priority = ?"); params.push([1, 2, 3].includes(priority) ? priority : 2);
+  }
+  if (deadline !== undefined) {
+    sets.push("deadline = ?"); params.push(deadline);
+  }
+
+  // اگر هیچ چیزی نفرستاده بود
+  if (sets.length === 0) return res.json({ ok: true });
+
+  sets.push("updated_at = ?");
+  params.push(nowISO());
+
+  params.push(tid);
+
+  run(`UPDATE tasks SET ${sets.join(", ")} WHERE id = ?`, params);
+
+  const t = getOne(
+    `SELECT id, project_id, title, description, status, priority, deadline, created_at, updated_at
+     FROM tasks WHERE id = ?`,
+    [tid]
+  );
+
+  res.json({ ok: true, task: t });
 });
 
-app.delete("/api/tasks/:id", auth, (req, res) => {
-	const taskId = req.params.id;
-	const db = readDB();
+// ✅ حذف تسک
+app.delete("/api/tasks/:id", authRequired, (req, res) => {
+  const tid = Number(req.params.id);
 
-	const exists = db.tasks.some((t) => t.id === taskId && t.ownerId === req.user.id);
-	if (!exists) return res.status(404).json({ ok: false, error: "تسک پیدا نشد." });
+  const own = getOne(
+    `SELECT t.id
+     FROM tasks t
+     JOIN projects p ON p.id = t.project_id
+     WHERE t.id = ? AND p.user_id = ?`,
+    [tid, req.user.id]
+  );
+  if (!own) return res.status(404).json({ ok: false, message: "تسک پیدا نشد" });
 
-	db.tasks = db.tasks.filter((t) => t.id !== taskId);
-	writeDB(db);
-	res.json({ ok: true });
+  run(`DELETE FROM tasks WHERE id = ?`, [tid]);
+  res.json({ ok: true });
 });
 
-// ---------- Feedback (stars) ----------
-app.post("/api/feedback", auth, (req, res) => {
-	const { message, stars } = req.body || {};
-	if (!message) return res.status(400).json({ ok: false, error: "متن بازخورد لازم است." });
+// ========= Feedback (ستاره + متن) =========
 
-	const db = readDB();
-	const fb = {
-		id: crypto.randomUUID(),
-		userId: req.user.id,
-		username: req.user.username,
-		name: req.user.name,
-		stars: Math.max(1, Math.min(5, Number(stars || 5))),
-		message: String(message).trim(),
-		createdAt: Date.now()
-	};
-	db.feedback.push(fb);
-	writeDB(db);
-	res.json({ ok: true, feedback: fb });
+// ✅ ثبت بازخورد
+app.post("/api/feedback", authRequired, (req, res) => {
+  const stars = Math.max(1, Math.min(5, Number(req.body.stars || 5)));
+  const message = String(req.body.message || "").trim();
+  if (!message) return res.status(400).json({ ok: false, message: "متن بازخورد خالی است" });
+
+  run(
+    `INSERT INTO feedback (user_id, stars, message, created_at)
+     VALUES (?, ?, ?, ?)`,
+    [req.user.id, stars, message, nowISO()]
+  );
+
+  res.json({ ok: true });
 });
 
-app.get("/api/feedback", auth, (req, res) => {
-	const db = readDB();
-	// فقط ادمین همه رو می‌بینه
-	if (req.user.role !== "admin") return res.status(403).json({ ok: false, error: "اجازه نداری." });
-	res.json({ ok: true, feedback: db.feedback.slice().sort((a, b) => b.createdAt - a.createdAt) });
+// ✅ دیدن بازخوردها (فقط ادمین)
+app.get("/api/admin/feedback", authRequired, (req, res) => {
+  if (req.user.role !== "admin") return res.status(403).json({ ok: false, message: "Forbidden" });
+
+  const rows = getAll(
+    `SELECT f.id, f.stars, f.message, f.created_at, u.name, u.username
+     FROM feedback f JOIN users u ON u.id = f.user_id
+     ORDER BY f.id DESC`,
+    []
+  );
+
+  res.json({ ok: true, feedback: rows });
 });
 
-// ---------- Start ----------
-app.listen(PORT, () => {
-	console.log(`✅ Nerdo running on http://localhost:${PORT}`);
+// ========= شروع سرور =========
+
+bootDatabase().then(() => {
+  app.listen(PORT, () => {
+    console.log(`✅ Nerdo (SQLite via sql.js) running on http://localhost:${PORT}`);
+  });
+}).catch((e) => {
+  console.log("❌ Failed to boot DB:", e?.message || e);
 });

@@ -1,46 +1,63 @@
 <!doctype html>
-<html lang="fa">
-
+<html lang="fa" dir="rtl">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<title>ورود | نِردو</title>
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;900&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="/css/style.css">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ورود | نردو</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-
 <body>
-	<div class="auth-wrap">
-		<div class="card auth-card">
-			<div class="center">
-				<h2>ورود به نِردو</h2>
-				<p class="muted">نام کاربری و رمز را وارد کن.</p>
-			</div>
-			<div class="hr"></div>
+  <div class="container" style="max-width:540px">
+    <div class="card">
+      <div class="brand" style="justify-content:center">
+        <!-- لوگوی 🤓 -->
+        <svg class="logo" viewBox="0 0 120 120" aria-label="لوگوی نردو">
+          <circle cx="60" cy="60" r="52" fill="#fde68a"/>
+          <circle cx="45" cy="55" r="8" fill="#111"/>
+          <circle cx="75" cy="55" r="8" fill="#111"/>
+          <rect x="28" y="40" width="64" height="30" rx="12" fill="none" stroke="#111" stroke-width="6"/>
+          <path d="M40 80 Q60 95 80 80" stroke="#111" stroke-width="6" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <h1>ورود</h1>
+          <div class="sub">به نِردو خوش اومدی</div>
+        </div>
+      </div>
 
-			<form id="loginForm">
-				<label class="lbl">نام کاربری (ایمیل یا هر چیز)</label>
-				<input name="username" required placeholder="مثلاً ava@gmail.com">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+  <button id="themeToggle" class="ghost">🌙 دارک</button>
+</div>
+      <div class="hr"></div>
 
-				<label class="lbl">رمز عبور</label>
-				<input name="password" type="password" required placeholder="****">
+      <!-- فرم ورود -->
+      <form id="loginForm">
+        <label class="lbl">نام کاربری</label>
+        <input name="username" required placeholder="مثلاً ava">
 
-				<button class="primary" type="submit" style="margin-top:12px;width:100%">ورود</button>
-			</form>
+        <label class="lbl">رمز عبور</label>
+        <input name="password" type="password" required placeholder="****">
 
-			<div id="msg" class="msg"></div>
+        <button class="primary" type="submit" style="width:100%;margin-top:12px">ورود</button>
+      </form>
 
-			<div class="hr"></div>
-			<div class="topbar-actions" style="justify-content:center">
-				<a class="tag" href="/register.html">ثبت‌نام</a>
-				<a class="tag" href="/index.html">خانه</a>
-			</div>
-		</div>
-	</div>
+      <!-- پیام خطا/موفقیت -->
+      <div id="msg" class="empty" style="display:none;margin-top:10px"></div>
 
-	<script src="/js/auth.js"></script>
+      <div class="hr"></div>
+      <div class="topbar-actions" style="justify-content:center">
+        <a class="tag" href="/register.html">ثبت‌نام</a>
+        <a class="tag" href="/">خانه</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- auth.js خودش فرم رو هندل می‌کند -->
+  <script type="module" src="/js/auth.js"></script>
+  <script src="/js/theme.js"></script>
 </body>
-
 </html>
