@@ -1,195 +1,211 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>داشبورد | نردو</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>داشبورد | نردو</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;900&display=swap" rel="stylesheet">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css">
+	<link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
-  <div class="container">
-    <!-- هدر داشبورد -->
-    <div class="topbar">
-      <div class="brand">
-        <!-- لوگوی 🤓 -->
-        <svg class="logo" viewBox="0 0 120 120" aria-label="لوگوی نردو">
-          <circle cx="60" cy="60" r="52" fill="#fde68a"/>
-          <circle cx="45" cy="55" r="8" fill="#111"/>
-          <circle cx="75" cy="55" r="8" fill="#111"/>
-          <rect x="28" y="40" width="64" height="30" rx="12" fill="none" stroke="#111" stroke-width="6"/>
-          <path d="M40 80 Q60 95 80 80" stroke="#111" stroke-width="6" fill="none" stroke-linecap="round"/>
-        </svg>
+	<div class="container">
+		<!-- هدر داشبورد -->
+		<div class="topbar">
+			<div class="brand">
+				<!-- لوگوی 🤓 -->
+				<svg class="logo" viewBox="0 0 120 120" aria-label="لوگوی نردو">
+					<circle cx="60" cy="60" r="52" fill="#fde68a" />
+					<circle cx="45" cy="55" r="8" fill="#111" />
+					<circle cx="75" cy="55" r="8" fill="#111" />
+					<rect x="28" y="40" width="64" height="30" rx="12" fill="none" stroke="#111" stroke-width="6" />
+					<path d="M40 80 Q60 95 80 80" stroke="#111" stroke-width="6" fill="none" stroke-linecap="round" />
+				</svg>
 
-        <div>
-          <h1>نِردو</h1>
-          <div class="sub">Kanban · مدیریت راحت و منظم کارها</div>
-          <div id="me" class="muted"></div>
-        </div>
-      </div>
+				<div>
+					<h1>نِردو</h1>
+					<div class="sub">Kanban · مدیریت راحت و منظم کارها</div>
+					<div id="me" class="muted"></div>
+				</div>
+			</div>
 
-      <div class="topbar-actions">
-        <button id="profileBtn" class="ghost">پروفایل</button>
-        <span id="roleTag" class="tag">کاربر</span>
-        <a class="tag" href="/about.html">درباره‌ما</a>
-        <button id="themeToggle" class="ghost">🌙 دارک</button>
-        <button id="logoutBtn" class="danger">خروج</button>
-      </div>
-    </div>
+			<div class="topbar-actions">
+				<button id="profileBtn" class="ghost">پروفایل</button>
+				<span id="roleTag" class="tag">کاربر</span>
+				<a class="tag" href="/about.html">درباره‌ما</a>
+				<button id="themeToggle" class="ghost">🌙 دارک</button>
+				<button id="logoutBtn" class="danger">خروج</button>
+			</div>
+		</div>
 
-    <!-- ساخت پروژه + لیست پروژه‌ها -->
-    <div class="grid">
-      <div class="card">
-        <h2>ساخت پروژه جدید</h2>
-        <p class="muted">اول پروژه بساز، بعد داخلش تسک اضافه کن.</p>
-        <div class="hr"></div>
+		<!-- ساخت پروژه + لیست پروژه‌ها -->
+		<div class="grid">
+			<div class="card">
+				<h2>ساخت پروژه جدید</h2>
+				<p class="muted">اول پروژه بساز، بعد داخلش تسک اضافه کن.</p>
+				<div class="hr"></div>
 
-        <form id="projectForm">
-          <label class="lbl">عنوان پروژه</label>
-          <input name="title" required placeholder="مثلاً پروژه وب‌سایت مدرسه">
+				<form id="projectForm">
+					<label class="lbl">عنوان پروژه</label>
+					<input name="title" required placeholder="مثلاً پروژه وب‌سایت مدرسه">
 
-          <label class="lbl">توضیح کوتاه</label>
-          <textarea name="description" rows="2" placeholder="هدف پروژه، اعضا، ..."></textarea>
+					<label class="lbl">توضیح کوتاه</label>
+					<textarea name="description" rows="2" placeholder="هدف پروژه، اعضا، ..."></textarea>
 
-          <button class="primary" type="submit" style="margin-top:10px">ایجاد پروژه</button>
-        </form>
-      </div>
+					<button class="primary" type="submit" style="margin-top:10px">ایجاد پروژه</button>
+				</form>
+			</div>
 
-      <div class="card">
-        <h2>پروژه‌های من</h2>
-        <p class="muted">روی یک پروژه کلیک کن تا کانبانش باز شود.</p>
-        <div class="hr"></div>
-        <div id="projectList"></div>
-      </div>
-    </div>
+			<div class="card">
+				<h2>پروژه‌های من</h2>
+				<p class="muted">روی یک پروژه کلیک کن تا کانبانش باز شود.</p>
+				<div class="hr"></div>
+				<div id="projectList"></div>
+			</div>
+		</div>
 
-    <!-- پنل کانبان -->
-    <div class="card panel">
-      <div class="board-head">
-        <div>
-          <h2 id="activeProjectTitle">کانبان</h2>
-          <p id="activeProjectDesc" class="muted">ابتدا یک پروژه انتخاب کن.</p>
-        </div>
-        <div class="badge">Drag & Drop فعال است ✅</div>
-      </div>
+		<!-- پنل کانبان -->
+		<div class="card panel">
+			<div class="board-head">
+				<div>
+					<h2 id="activeProjectTitle">کانبان</h2>
+					<p id="activeProjectDesc" class="muted">ابتدا یک پروژه انتخاب کن.</p>
+				</div>
+				<div class="badge">Drag & Drop فعال است ✅</div>
+			</div>
 
-      <!-- KPI -->
-      <div class="kpi-grid">
-        <div class="kpi"><div id="kpiTotal" class="n">0</div><div class="t">کل تسک‌ها</div></div>
-        <div class="kpi"><div id="kpiDone" class="n">0</div><div class="t">انجام شده</div></div>
-        <div class="kpi"><div id="kpiDoing" class="n">0</div><div class="t">در حال انجام</div></div>
-        <div class="kpi"><div id="kpiRate" class="n">0%</div><div class="t">نرخ تکمیل</div></div>
-      </div>
+			<!-- KPI -->
+			<div class="kpi-grid">
+				<div class="kpi">
+					<div id="kpiTotal" class="n">0</div>
+					<div class="t">کل تسک‌ها</div>
+				</div>
+				<div class="kpi">
+					<div id="kpiDone" class="n">0</div>
+					<div class="t">انجام شده</div>
+				</div>
+				<div class="kpi">
+					<div id="kpiDoing" class="n">0</div>
+					<div class="t">در حال انجام</div>
+				</div>
+				<div class="kpi">
+					<div id="kpiRate" class="n">0%</div>
+					<div class="t">نرخ تکمیل</div>
+				</div>
+			</div>
 
-      <!-- نوار پیشرفت -->
-      <div class="progress-wrap">
-        <div class="muted" style="display:flex;justify-content:space-between;gap:10px">
-          <span>پیشرفت پروژه</span>
-          <span id="progressText">0%</span>
-        </div>
-        <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
-      </div>
+			<!-- نوار پیشرفت -->
+			<div class="progress-wrap">
+				<div class="muted" style="display:flex;justify-content:space-between;gap:10px">
+					<span>پیشرفت پروژه</span>
+					<span id="progressText">0%</span>
+				</div>
+				<div class="progress">
+					<div id="progressBar" class="progress-bar"></div>
+				</div>
+			</div>
 
-      <div class="hr"></div>
+			<div class="hr"></div>
 
-      <div class="grid board-grid">
-        <!-- ستون سمت چپ: فرم‌ها -->
-        <div class="card inner">
-          <h3>افزودن تسک</h3>
+			<div class="grid board-grid">
+				<!-- ستون سمت چپ: فرم‌ها -->
+				<div class="card inner">
+					<h3>افزودن تسک</h3>
 
-          <form id="taskForm">
-            <label class="lbl">عنوان تسک</label>
-            <input name="title" required placeholder="مثلاً طراحی صفحه ورود">
+					<form id="taskForm">
+						<label class="lbl">عنوان تسک</label>
+						<input name="title" required placeholder="مثلاً طراحی صفحه ورود">
 
-            <label class="lbl">توضیح</label>
-            <textarea name="description" rows="2" placeholder="جزئیات کار..."></textarea>
+						<label class="lbl">توضیح</label>
+						<textarea name="description" rows="2" placeholder="جزئیات کار..."></textarea>
 
-            <label class="lbl">اولویت</label>
-            <select name="priority">
-              <option value="1">بالا</option>
-              <option value="2" selected>متوسط</option>
-              <option value="3">پایین</option>
-            </select>
+						<label class="lbl">اولویت</label>
+						<select name="priority">
+							<option value="1">بالا</option>
+							<option value="2" selected>متوسط</option>
+							<option value="3">پایین</option>
+						</select>
 
-            <!-- ✅ ددلاین -->
-            <label class="lbl">ددلاین</label>
-            <input type="date" name="deadline"/>
+						<!-- ✅ ددلاین -->
+						<label class="lbl">ددلاین</label>
+						<input type="date" name="deadline" />
 
-            <button class="primary" type="submit" style="margin-top:10px;width:100%">ثبت تسک</button>
-          </form>
+						<button class="primary" type="submit" style="margin-top:10px;width:100%">ثبت تسک</button>
+					</form>
 
-          <div class="hr"></div>
+					<div class="hr"></div>
 
-          <h3>نظرسنجی و بازخورد ⭐</h3>
-          <p class="muted">امتیاز بده و پیام کوتاه بنویس.</p>
+					<h3>نظرسنجی و بازخورد ⭐</h3>
+					<p class="muted">امتیاز بده و پیام کوتاه بنویس.</p>
 
-          <div class="stars">
-            <div class="star on" data-v="1">★</div>
-            <div class="star on" data-v="2">★</div>
-            <div class="star on" data-v="3">★</div>
-            <div class="star on" data-v="4">★</div>
-            <div class="star on" data-v="5">★</div>
-            <span class="tag">امتیاز: <b id="starsValue">5</b></span>
-          </div>
+					<div class="stars">
+						<div class="star on" data-v="1">★</div>
+						<div class="star on" data-v="2">★</div>
+						<div class="star on" data-v="3">★</div>
+						<div class="star on" data-v="4">★</div>
+						<div class="star on" data-v="5">★</div>
+						<span class="tag">امتیاز: <b id="starsValue">5</b></span>
+					</div>
 
-          <form id="feedbackForm">
-            <label class="lbl">پیام</label>
-            <textarea name="message" rows="3" required placeholder="نظر/پیشنهاد/مشکل..."></textarea>
-            <button class="ghost" type="submit" style="margin-top:10px;width:100%">ارسال بازخورد</button>
-          </form>
-        </div>
+					<form id="feedbackForm">
+						<label class="lbl">پیام</label>
+						<textarea name="message" rows="3" required placeholder="نظر/پیشنهاد/مشکل..."></textarea>
+						<button class="ghost" type="submit" style="margin-top:10px;width:100%">ارسال بازخورد</button>
+					</form>
+				</div>
 
-        <!-- ستون راست: کانبان -->
-        <div>
-          <!-- حالت خالی هوشمند برای تسک -->
-          <div id="emptyTasks" class="empty" style="display:none;margin-bottom:10px">
-            این پروژه هنوز تسکی نداره 🙂<br/>
-            از سمت چپ «افزودن تسک» اولین تسک رو بساز.
-          </div>
+				<!-- ستون راست: کانبان -->
+				<div>
+					<!-- حالت خالی هوشمند برای تسک -->
+					<div id="emptyTasks" class="empty" style="display:none;margin-bottom:10px">
+						این پروژه هنوز تسکی نداره 🙂<br />
+						از سمت چپ «افزودن تسک» اولین تسک رو بساز.
+					</div>
 
-          <div class="kanban">
-            <div class="column">
-              <div class="col-head">
-                <h3>در انتظار</h3>
-                <span id="countTodo" class="pill">0</span>
-              </div>
-              <div id="colTodo" class="dropzone" data-status="todo"></div>
-            </div>
+					<div class="kanban">
+						<div class="column">
+							<div class="col-head">
+								<h3>در انتظار</h3>
+								<span id="countTodo" class="pill">0</span>
+							</div>
+							<div id="colTodo" class="dropzone" data-status="todo"></div>
+						</div>
 
-            <div class="column">
-              <div class="col-head">
-                <h3>در حال انجام</h3>
-                <span id="countDoing" class="pill">0</span>
-              </div>
-              <div id="colDoing" class="dropzone" data-status="doing"></div>
-            </div>
+						<div class="column">
+							<div class="col-head">
+								<h3>در حال انجام</h3>
+								<span id="countDoing" class="pill">0</span>
+							</div>
+							<div id="colDoing" class="dropzone" data-status="doing"></div>
+						</div>
 
-            <div class="column">
-              <div class="col-head">
-                <h3>انجام شده</h3>
-                <span id="countDone" class="pill">0</span>
-              </div>
-              <div id="colDone" class="dropzone" data-status="done"></div>
-            </div>
-          </div>
+						<div class="column">
+							<div class="col-head">
+								<h3>انجام شده</h3>
+								<span id="countDone" class="pill">0</span>
+							</div>
+							<div id="colDone" class="dropzone" data-status="done"></div>
+						</div>
+					</div>
 
-          <div class="muted" style="margin-top:10px">
-            راهنما: کارت را بکش و داخل ستون دیگر رها کن تا وضعیتش عوض شود.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+					<div class="muted" style="margin-top:10px">
+						راهنما: کارت را بکش و داخل ستون دیگر رها کن تا وضعیتش عوض شود.
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-  <!-- Toast -->
-  <div id="toast" class="toast"></div>
+	<!-- Toast -->
+	<div id="toast" class="toast"></div>
 
-  <script type="module" src="/js/app.js"></script>
-  <script src="/js/theme.js"></script>
+	<script type="module" src="/js/app.js"></script>
+	<script src="/js/theme.js"></script>
 </body>
-</html>
 
+</html>
